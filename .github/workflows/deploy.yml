@@ -3,7 +3,7 @@ name: Deploy adn publish backend
 on:
   push:
     branches:
-      - actions
+      - dev
     # types:
     #   - closed
 
