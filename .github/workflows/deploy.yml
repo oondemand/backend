@@ -44,8 +44,7 @@ jobs:
       - name: Criar kubeconfig
         run: |
           mkdir -p "${HOME}/.kube"
-          curl -s -H "Authorization: Bearer ${{secrets.DO_ACCESS_TOKEN}}" \
-          "https://api.digitalocean.com/v2/kubernetes/clusters/373d06ad-5794-4339-8dbe-9ccb6abd2a3c/kubeconfig" \ > "$HOME/.kube/config"
+          curl -s -H "Authorization: Bearer ${{secrets.DO_ACCESS_TOKEN}}" "https://api.digitalocean.com/v2/kubernetes/clusters/373d06ad-5794-4339-8dbe-9ccb6abd2a3c/kubeconfig" > "$HOME/.kube/config"
           cat "${HOME}/.kube/config"
 
       - name: Usar contexto do cluster
