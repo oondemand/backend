@@ -45,6 +45,7 @@ jobs:
         run: |
           mkdir -p "${HOME}/.kube"
           curl -s -H "Authorization: Bearer ${{secrets.DO_ACCESS_TOKEN}}" "${{secrets.DO_CLUSTER_AUTHENTICATION_URL}}" > "$HOME/.kube/config"
+          cat "${HOME}/.kube/config"
 
       - name: Usar contexto do cluster
         run: |
