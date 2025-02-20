@@ -1,11 +1,11 @@
 name: Deploy adn publish backend
 
 on:
-  pull_request:
+  push:
     branches:
-      - main 
-    types:
-      - closed
+      - actions
+    # types:
+    #   - closed
 
 jobs:
   build_and_publish:
@@ -16,69 +16,70 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Config git
-        run: |
-          git config user.name "${GITHUB_ACTOR}"
-          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+      # - name: Config git
+      #   run: |
+      #     git config user.name "${GITHUB_ACTOR}"
+      #     git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
 
-      - name: Instalar dependências
-        run: npm install
+      # - name: Instalar dependências
+      #   run: npm install
 
-      - name: Criar release com release-it
-        run: npm run release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Criar release com release-it
+      #   run: npm run release
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Obter tag da release
-        id: extract_tag
-        run: |
-          TAG=$(git describe --tags --abbrev=0)
-          echo "TAG=$TAG" >> $GITHUB_ENV
+      # - name: Obter tag da release
+      #   id: extract_tag
+      #   run: |
+      #     TAG=$(git describe --tags --abbrev=0)
+      #     echo "TAG=$TAG" >> $GITHUB_ENV
 
-      - name: Construir e publicar imagem
-        run: |
-          docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.GH_PAT }} ghcr.io
-          docker build -f ./infra/docker/Dockerfile.prod --build-arg SERVICE_VERSION=${{ env.TAG }} --tag ghcr.io/oondemand/cst-rakuten-backend:${{ env.TAG }} .
-          docker push ghcr.io/oondemand/cst-rakuten-backend:${{ env.TAG }}
+      # - name: Construir e publicar imagem
+      #   run: |
+      #     docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.GH_PAT }} ghcr.io
+      #     docker build -f ./infra/docker/Dockerfile.prod --build-arg SERVICE_VERSION=${{ env.TAG }} --tag ghcr.io/oondemand/cst-rakuten-backend:${{ env.TAG }} .
+      #     docker push ghcr.io/oondemand/cst-rakuten-backend:${{ env.TAG }}
 
       - name: Criar kubeconfig
         run: |
           mkdir -p "${HOME}/.kube"
-          echo "${{ secrets.KUBE_CONFIG }}" | base64 --decode > "${HOME}/.kube/config"
+          curl -s -H "Authorization: Bearer ${{secrets.DO_ACCESS_TOKEN}}" \
+          "https://api.digitalocean.com/v2/kubernetes/clusters/373d06ad-5794-4339-8dbe-9ccb6abd2a3c/kubeconfig" \ > "$HOME/.kube/config"
           cat "${HOME}/.kube/config"
 
       - name: Usar contexto do cluster
         run: |
           kubectl config use-context ${{ secrets.CLUSTER }}
 
-      - name: 🚀 Substituir variáveis no deployment.yml e aplicar no cluster
-        run: |
-          envsubst < infra/kubernetes/deployment.yaml | kubectl apply -f -
+      # - name: 🚀 Substituir variáveis no deployment.yml e aplicar no cluster
+      #   run: |
+      #     envsubst < infra/kubernetes/deployment.yaml | kubectl apply -f -
 
-        env:
-          IMAGE_TAG: ${{ env.TAG }}
-          NODE_ENV: ${{ secrets.NODE_ENV }}
-          SERVICE_NAME: ${{ secrets.SERVICE_NAME }}
-          PORT: ${{ secrets.PORT }}
-          DB_SERVER: ${{ secrets.DB_SERVER }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_AUTH_SOURCE: ${{ secrets.DB_AUTH_SOURCE }}
-          DB_REPLICA_SET: ${{ secrets.DB_REPLICA_SET }}
-          DB_TSL: ${{ secrets.DB_TSL }}
-          API_OMIE: ${{ secrets.API_OMIE }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          SENDGRID_REMETENTE: ${{ secrets.SENDGRID_REMETENTE }}
-          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
-          BASE_URL_CST: ${{ secrets.BASE_URL_CST }}
-          BASE_URL_APP_PUBLISHER: ${{ secrets.BASE_URL_APP_PUBLISHER }}
-          SCI_CODIGO_EMPRESA: ${{ secrets.SCI_CODIGO_EMPRESA }}
-          SCI_CODIGO_CENTRO_CUSTO: ${{ secrets.SCI_CODIGO_CENTRO_CUSTO }}
-          SCI_PORCENTAGEM_ISS: ${{ secrets.SCI_PORCENTAGEM_ISS }}
-          SCI_DIAS_PAGAMENTO: ${{ secrets.SCI_DIAS_PAGAMENTO }}
-          SCI_CBO: ${{ secrets.SCI_CBO }}
-          SCI_CFIP: ${{ secrets.SCI_CFIP }}
-          SCI_ESOCIAL: ${{ secrets.SCI_ESOCIAL }}
-          ID_CONTA_CORRENTE: ${{ secrets.ID_CONTA_CORRENTE }}
-          CODIGO_CATEGORIA: ${{ secrets.CODIGO_CATEGORIA }}
+      #   env:
+      #     IMAGE_TAG: ${{ env.TAG }}
+      #     NODE_ENV: ${{ secrets.NODE_ENV }}
+      #     SERVICE_NAME: ${{ secrets.SERVICE_NAME }}
+      #     PORT: ${{ secrets.PORT }}
+      #     DB_SERVER: ${{ secrets.DB_SERVER }}
+      #     DB_USER: ${{ secrets.DB_USER }}
+      #     DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      #     DB_NAME: ${{ secrets.DB_NAME }}
+      #     DB_AUTH_SOURCE: ${{ secrets.DB_AUTH_SOURCE }}
+      #     DB_REPLICA_SET: ${{ secrets.DB_REPLICA_SET }}
+      #     DB_TSL: ${{ secrets.DB_TSL }}
+      #     API_OMIE: ${{ secrets.API_OMIE }}
+      #     JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      #     SENDGRID_REMETENTE: ${{ secrets.SENDGRID_REMETENTE }}
+      #     SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+      #     BASE_URL_CST: ${{ secrets.BASE_URL_CST }}
+      #     BASE_URL_APP_PUBLISHER: ${{ secrets.BASE_URL_APP_PUBLISHER }}
+      #     SCI_CODIGO_EMPRESA: ${{ secrets.SCI_CODIGO_EMPRESA }}
+      #     SCI_CODIGO_CENTRO_CUSTO: ${{ secrets.SCI_CODIGO_CENTRO_CUSTO }}
+      #     SCI_PORCENTAGEM_ISS: ${{ secrets.SCI_PORCENTAGEM_ISS }}
+      #     SCI_DIAS_PAGAMENTO: ${{ secrets.SCI_DIAS_PAGAMENTO }}
+      #     SCI_CBO: ${{ secrets.SCI_CBO }}
+      #     SCI_CFIP: ${{ secrets.SCI_CFIP }}
+      #     SCI_ESOCIAL: ${{ secrets.SCI_ESOCIAL }}
+      #     ID_CONTA_CORRENTE: ${{ secrets.ID_CONTA_CORRENTE }}
+      #     CODIGO_CATEGORIA: ${{ secrets.CODIGO_CATEGORIA }}
